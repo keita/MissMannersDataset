@@ -37,7 +37,7 @@ class Generator
   end
 
   def generate_sex()
-    sex = @random.rand(1) == 0 ? :m : :f
+    sex = @random.rand(2) == 0 ? :m : :f
     sex = :f if sex == :m and max_male?
     sex = :m if sex == :f and max_female?
     sex == :m ? @male_count += 1 : @female_count += 1
