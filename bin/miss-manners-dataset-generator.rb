@@ -6,20 +6,38 @@
 # This program is a modern version of Miss Mannger Data Generator in OPS5
 # benchmark suite.
 
+require 'erb'
+require 'optparse'
 
 class Generator
-  def initialize(guest_size, seat_size, min_hobby, max_hobby, seed=10)
+  attr_accessor :guest_size
+  attr_accessor :min_hobby
+  attr_accessor :max_hobby
+
+  def initialize(seed=10)
     @random = Random.new(seed)
-    @guest_size = guest_size
-    @seat_size = seat_size
-    @min_hobby = min_hobby
-    @max_hobby = max_hobby
     @male_count = 0
     @female_count = 0
   end
 
-  def header
-    "name, sex, hobby"
+  def validate
+    unless not(@guest_size.nil?) && (@guest_size > 0)
+      raise RuntimeError.new("guest size is invalid.")
+    end
+
+    unless not(@min_hobby.nil?) and (@min_hobby > 0)
+      raise RuntimeError.new("min size is invalid.")
+    end
+
+    unless not(@max_hobby.nil?) and @max_hobby > 0
+      raise RuntimeError.new("max size is invalid.")
+    end
+
+    unless @max_hobby >= @min_hobby
+      raise RuntimeError.new("max size should be greater than min size.")
+    end
+
+    return true
   end
 
   def each
@@ -59,8 +77,66 @@ class Generator
   end
 end
 
-generator = Generator.new(ARGV[0].to_i, ARGV[0].to_i, ARGV[1].to_i, ARGV[2].to_i)
-puts generator.header
-generator.each do |*fields|
-  puts fields.join(", ")
+class Printer
+  attr_accessor :template
+
+  def initialize(generator)
+    @generator = generator
+  end
+
+  def print
+    erb = ERB.new(@template)
+    puts erb.result(Context.new(@generator).binding)
+  end
+
+  class Context
+    attr_reader :generator
+    attr_reader :name
+    attr_reader :sex
+    attr_reader :hobby
+
+    def initialize(generator)
+      @generator = generator
+    end
+
+    def binding
+      Kernel.binding
+    end
+  end
+end
+
+CSV_TEMPLATE = <<__TEMPLATE__
+name, sex, hobby
+<% generator.each do |*fields| %><%= fields.join(", ") %><% end%>
+__TEMPLATE__
+
+CLIPS_TEMPLATE = <<__TEMPLATE__
+<% generator.each do |name, sex, hobby| %>
+(make guest ^name <%= name %> ^sex <%= sex %> ^hobby <%= hobby %>)<% end %>
+__TEMPLATE__
+
+$generator = Generator.new
+$printer = Printer.new($generator)
+
+opt = OptionParser.new
+opt.on('--type NAME') {|name|
+  case name.downcase
+  when "csv"
+    $printer.template = CSV_TEMPLATE
+  when "clips"
+    $printer.template = CLIPS_TEMPLATE
+  end
+}
+opt.parse!
+
+if ARGV.size == 3
+  $generator.guest_size = ARGV[0].to_i
+  $generator.min_hobby = ARGV[1].to_i
+  $generator.max_hobby = ARGV[2].to_i
+else
+  raise RuntimeError.new("Requires guest number, min hobby number, and max hobby number.")
+end
+
+if $generator.validate
+  $printer.print
 end
