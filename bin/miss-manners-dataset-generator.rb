@@ -85,7 +85,7 @@ class Printer
   end
 
   def print
-    erb = ERB.new(@template)
+    erb = ERB.new(@template, nil, "%-")
     puts erb.result(Context.new(@generator).binding)
   end
 
@@ -107,12 +107,15 @@ end
 
 CSV_TEMPLATE = <<__TEMPLATE__
 name, sex, hobby
-<% generator.each do |*fields| %><%= fields.join(", ") %><% end%>
+<%- generator.each do |*fields| -%>
+<%= fields.join(",") %>
+<%- end -%>
 __TEMPLATE__
 
 CLIPS_TEMPLATE = <<__TEMPLATE__
-<% generator.each do |name, sex, hobby| %>
-(make guest ^name <%= name %> ^sex <%= sex %> ^hobby <%= hobby %>)<% end %>
+<%- generator.each do |name, sex, hobby| -%>
+(make guest ^name <%= name %> ^sex <%= sex %> ^hobby <%= hobby %>)
+<%- end -%>
 __TEMPLATE__
 
 $generator = Generator.new
