@@ -82,6 +82,7 @@ class Printer
 
   def initialize(generator)
     @generator = generator
+    @template = CSV_TEMPLATE
   end
 
   def print
@@ -106,7 +107,7 @@ class Printer
 end
 
 CSV_TEMPLATE = <<__TEMPLATE__
-name, sex, hobby
+name,sex,hobby
 <%- generator.each do |*fields| -%>
 <%= fields.join(",") %>
 <%- end -%>
