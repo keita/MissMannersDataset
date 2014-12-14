@@ -132,6 +132,23 @@ if __FILE__ == $0
       $printer.template = CLIPS_TEMPLATE
     end
   }
+  opt.on('--template FILE') {|filename|
+    $printer.template = File.read(filename)
+  }
+  opt.on('--help') {
+    puts <<__HELP__
+miss-manners-dataset-generator.rb GUEST_SIZE MIN MAX [OPTIONS]
+
+ARGUMENTS:
+  GUEST_SIZE   guest size (n > 0)
+  MIN          min size of guest's hobbies (n > 0)
+  MAX          max size of guest's hobbies (n > 0 and max >= min)
+
+OPTIONS:
+  --type TYPE      format type (csv|clips)
+  --template FILE  erb file for template
+__HELP__
+  }
   opt.parse!
 
   if ARGV.size == 3
