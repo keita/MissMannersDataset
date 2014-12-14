@@ -85,9 +85,9 @@ class Printer
     @template = CSV_TEMPLATE
   end
 
-  def print
+  def print(out=STDOUT)
     erb = ERB.new(@template, nil, "%-")
-    puts erb.result(Context.new(@generator).binding)
+    out.print(erb.result(Context.new(@generator).binding))
   end
 
   class Context
@@ -119,28 +119,30 @@ CLIPS_TEMPLATE = <<__TEMPLATE__
 <%- end -%>
 __TEMPLATE__
 
-$generator = Generator.new
-$printer = Printer.new($generator)
+if __FILE__ == $0
+  $generator = Generator.new
+  $printer = Printer.new($generator)
 
-opt = OptionParser.new
-opt.on('--type NAME') {|name|
-  case name.downcase
-  when "csv"
-    $printer.template = CSV_TEMPLATE
-  when "clips"
-    $printer.template = CLIPS_TEMPLATE
+  opt = OptionParser.new
+  opt.on('--type NAME') {|name|
+    case name.downcase
+    when "csv"
+      $printer.template = CSV_TEMPLATE
+    when "clips"
+      $printer.template = CLIPS_TEMPLATE
+    end
+  }
+  opt.parse!
+
+  if ARGV.size == 3
+    $generator.guest_size = ARGV[0].to_i
+    $generator.min_hobby = ARGV[1].to_i
+    $generator.max_hobby = ARGV[2].to_i
+  else
+    raise RuntimeError.new("Requires guest number, min hobby number, and max hobby number.")
   end
-}
-opt.parse!
 
-if ARGV.size == 3
-  $generator.guest_size = ARGV[0].to_i
-  $generator.min_hobby = ARGV[1].to_i
-  $generator.max_hobby = ARGV[2].to_i
-else
-  raise RuntimeError.new("Requires guest number, min hobby number, and max hobby number.")
-end
-
-if $generator.validate
-  $printer.print
+  if $generator.validate
+    $printer.print
+  end
 end
